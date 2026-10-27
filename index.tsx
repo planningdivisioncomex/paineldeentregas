@@ -4240,12 +4240,12 @@ fileUpload?.addEventListener("change", (e) => {
         obj._id = makeRowId(obj);
 
         const existing = existingMap.get(obj._id) || existingMap.get(normalizeText(obj["CONTAINER"])) || existingMap.get(normalizeText(obj["BL"]));
-        if (existing) {
-          if (existing["STATUS"] && existing["STATUS"] !== "PENDENTE") {
-            if (obj["STATUS"] === "PENDENTE" || obj["STATUS"] === "AGUARDANDO DESOVA" || !col.STATUS || col.STATUS < 0) {
-              obj["STATUS"] = existing["STATUS"];
-            }
-          }
+    if (existing) {
+      if (existing["STATUS"] && existing["STATUS"] !== "PENDENTE") {
+        if (obj["STATUS"] === "PENDENTE" || obj["STATUS"] === "AGUARDANDO DESOVA" || col.STATUS < 0) {
+          obj["STATUS"] = existing["STATUS"];
+        }
+      }
           if (existing["IN_LINE_TIMESTAMP"]) {
             obj["IN_LINE_TIMESTAMP"] = existing["IN_LINE_TIMESTAMP"];
           }
