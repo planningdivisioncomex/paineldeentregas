@@ -1,0 +1,264 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Entregas de Contêineres</title>
+    <script>
+        // Immediately apply the theme on initial load to prevent FOUC (Flash of Unstyled Content)
+        (function() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <!-- Firebase compatibility scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="p-4 md:p-8 bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-300">
+    <div class="max-w-[95vw] mx-auto">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div class="flex items-center gap-4">
+                <div id="logo-container" class="hidden flex-shrink-0">
+                    <img id="company-logo" src="#" alt="Company Logo" class="h-12 object-contain">
+                </div>
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 dark:text-slate-100" data-i18n="headerTitle">Painel de Entregas</h1>
+                    <p id="last-update" class="text-slate-500 dark:text-slate-400 mt-1 text-sm" data-i18n="uploadPrompt">Carregue sua planilha de agendamento para começar</p>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+                <!-- Search & Upload Bar -->
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-64">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-slate-400"></i>
+                        </div>
+                        <input type="search" id="search-input" placeholder="Pesquisar container, placa..." data-i18n-placeholder="searchInputPlaceholder" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm py-2.5 pl-10 pr-4 text-sm focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                    
+                    <label for="file-upload" class="cursor-pointer bg-blue-600 text-white px-4 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition-all duration-300 font-semibold flex items-center justify-center whitespace-nowrap min-h-[42px] text-sm" aria-label="Carregar Planilha" data-i18n-aria-label="uploadSheetTooltip">
+                        <i class="fas fa-upload mr-2"></i>
+                        <span data-i18n="uploadSheetButton">Carregar</span>
+                    </label>
+                    <input id="file-upload" type="file" class="hidden" accept=".xlsx, .xls">
+                </div>
+
+                <!-- Filters & Preferences -->
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none max-w-full">
+                        <button id="battery-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center h-[42px] shrink-0" aria-label="Filtrar Baterias" data-i18n-aria-label="filterBatteryTooltip" title="Filtrar Baterias" data-i18n-title="filterBatteryTooltip">
+                            <i class="fas fa-bolt w-5 text-center text-amber-500"></i>
+                        </button>
+                        <button id="kd-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center font-bold text-blue-600 h-[42px] shrink-0" aria-label="Filtrar KD" data-i18n-aria-label="filterKdTooltip" title="Filtrar KD" data-i18n-title="filterKdTooltip">
+                            KD
+                        </button>
+                        <button id="sp-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center font-bold text-orange-600 h-[42px] shrink-0" aria-label="Filtrar SP" data-i18n-aria-label="filterSpTooltip" title="Filtrar SP" data-i18n-title="filterSpTooltip">
+                            SP
+                        </button>
+                        <button id="pbp-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center font-bold text-emerald-600 h-[42px] shrink-0" aria-label="Filtrar PBP" data-i18n-aria-label="filterPbpTooltip" title="Filtrar PBP" data-i18n-title="filterPbpTooltip">
+                            PBP
+                        </button>
+                        <button id="project-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center font-bold text-purple-600 h-[42px] shrink-0" aria-label="Filtrar Project Cargo" data-i18n-aria-label="filterProjectTooltip" title="Filtrar Project Cargo" data-i18n-title="filterProjectTooltip">
+                            PC
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 ml-auto md:ml-0 shrink-0">
+                        <label for="logo-upload" class="cursor-pointer bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center h-[42px]" title="Carregar logo da empresa" data-i18n-title="uploadLogoTooltip">
+                            <i class="fas fa-image w-5 text-center"></i>
+                        </label>
+                        <input id="logo-upload" type="file" class="hidden" accept="image/png, image/jpeg, image/svg+xml">
+
+                        <button id="theme-toggle" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center h-[42px]" aria-label="Alternar tema" data-i18n-aria-label="toggleThemeTooltip">
+                            <i class="fas fa-sun w-5 text-center"></i>
+                        </button>
+
+                        <div id="language-switcher" class="flex items-center space-x-1 bg-white dark:bg-slate-700 p-1 rounded-lg shadow-sm border border-gray-300 dark:border-slate-600 h-[42px]">
+                            <button data-lang="pt-BR" class="lang-btn px-2 py-1 text-xs font-semibold rounded-md transition-colors">PT</button>
+                            <button data-lang="en-US" class="lang-btn px-2 py-1 text-xs font-semibold rounded-md transition-colors">EN</button>
+                            <button data-lang="zh-CN" class="lang-btn px-2 py-1 text-xs font-semibold rounded-md transition-colors">中文</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div id="lot-search-container" class="hidden flex flex-col md:flex-row items-center mb-6 gap-3">
+            <div class="flex-1 w-full flex flex-col md:flex-row gap-3">
+                <div class="relative w-full md:w-64">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                    <input type="search" id="lot-search-input" placeholder="Pesquisar LOTE" data-i18n-placeholder="searchLotPlaceholder" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm py-2.5 pl-10 pr-4 text-sm focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                
+                <div class="relative w-full md:w-48">
+                    <select id="month-filter-select" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm py-2.5 pl-4 pr-10 text-sm focus:ring-blue-500 focus:border-blue-500 transition appearance-none cursor-pointer font-medium text-slate-700 dark:text-slate-200">
+                        <option value="">Todos os meses</option>
+                        <option value="0">Janeiro</option>
+                        <option value="1">Fevereiro</option>
+                        <option value="2">Março</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Maio</option>
+                        <option value="5">Junho</option>
+                        <option value="6">Julho</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Setembro</option>
+                        <option value="9">Outubro</option>
+                        <option value="10">Novembro</option>
+                        <option value="11">Dezembro</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-row justify-end items-center gap-3 w-full md:w-auto shrink-0">
+                 <button id="export-excel-btn" class="flex-1 md:flex-initial bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold flex items-center justify-center">
+                    <i class="fas fa-file-excel mr-2 text-green-600"></i> <span data-i18n="exportExcelButton">Exportar Excel</span>
+                </button>
+                <button id="export-pdf-btn" class="flex-1 md:flex-initial bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold flex items-center justify-center">
+                    <i class="fas fa-file-pdf mr-2 text-red-600"></i> <span data-i18n="exportPdfButton">Exportar PDF</span>
+                </button>
+                <button id="save-day-btn" class="flex-1 md:flex-initial bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 font-semibold flex items-center justify-center">
+                    <i class="fas fa-archive mr-2 text-indigo-600"></i> <span data-i18n="saveDayButton">Fechar e Salvar Dia</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div id="summary-stats" class="hidden grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-3 mb-6">
+            <!-- Stats will be injected here -->
+        </div>
+
+        <!-- Delivery Dashboard -->
+        <div id="delivery-dashboard" class="hidden">
+            <!-- View Mode Tabs -->
+            <div id="view-mode-tabs" class="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Visualizações">
+                <button type="button" role="tab" aria-selected="true" class="view-tab-btn px-4 py-2 border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-semibold text-sm whitespace-nowrap" data-tab="deliveries" data-i18n="deliveriesTab">Entregas</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="charts" data-i18n="chartsTab">Gráficos (Operação)</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="time" data-i18n="timeTab">Tempo de Operação</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="history" data-i18n="historyTab">Histórico Mensal</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="pareto" data-i18n="paretoTab">Análise de Fenômeno - Paretos</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="swot" data-i18n="swotTab">SWOT</button>
+                <button type="button" role="tab" aria-selected="false" class="view-tab-btn px-4 py-2 border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:dark:text-slate-200 font-semibold text-sm whitespace-nowrap" data-tab="timeline" data-i18n="timeLineTab">Tempo na Fila</button>
+            </div>
+            
+            <div id="deliveries-wrapper">
+                <div id="delivery-tabs" class="flex items-center border-b border-gray-200 dark:border-slate-700 mb-4 overflow-x-auto pb-1 scrollbar-none hidden" role="tablist" aria-label="Datas de entrega"></div>
+                <div id="delivery-content">
+                    <!-- Content panes (cards) will be injected here -->
+                </div>
+            </div>
+            
+            <div id="charts-content" class="hidden">
+                 <!-- Charts will be injected here -->
+            </div>
+            <div id="time-content" class="hidden">
+                 <!-- Time tracking table will be injected here -->
+            </div>
+            <div id="history-content" class="hidden">
+                 <!-- History logs will be injected here -->
+            </div>
+            <div id="pareto-content" class="hidden">
+                 <!-- Pareto chart and tables will be injected here -->
+            </div>
+            <div id="swot-content" class="hidden">
+                 <!-- SWOT analysis will be injected here -->
+            </div>
+            <div id="timeline-content" class="hidden">
+                 <!-- Time in line comparison will be injected here -->
+            </div>
+        </div>
+        
+        <!-- Placeholder -->
+        <div id="placeholder" class="text-center py-20 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+            <i class="fas fa-file-import text-6xl text-slate-300 dark:text-slate-600 mb-4" aria-hidden="true"></i>
+            <h2 class="text-2xl font-semibold text-slate-700 dark:text-slate-200" data-i18n="placeholderTitle">Aguardando planilha...</h2>
+            <p class="text-slate-500 dark:text-slate-400 mt-2" data-i18n="placeholderMessage">Selecione um arquivo .xlsx para visualizar a programação de entregas.</p>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal-container" class="hidden fixed inset-0 bg-black/30 dark:bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-message">
+        <div id="confirmation-modal" class="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md transform transition-all opacity-0 scale-95">
+            <div class="p-6">
+                <div class="flex items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 dark:bg-yellow-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400" aria-hidden="true"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 id="modal-title" class="text-lg leading-6 font-bold text-slate-900 dark:text-slate-100" data-i18n="confirmAction">Confirmar Ação</h3>
+                        <div class="mt-2">
+                            <p id="modal-message" class="text-sm text-slate-500 dark:text-slate-400" data-i18n="areYouSure">Tem certeza que deseja continuar?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+                <button id="modal-confirm-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm" data-i18n="confirmButton">
+                    Confirmar
+                </button>
+                <button id="modal-cancel-btn" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm" data-i18n="cancelButton">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maximized Chart Modal -->
+    <div id="chart-max-modal-container" class="hidden fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4 transition-all duration-350" role="dialog" aria-modal="true">
+        <div id="chart-max-modal" class="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-7xl h-[85vh] flex flex-col p-6 relative transform scale-95 opacity-0 transition-all duration-350">
+            <button id="chart-max-close-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl cursor-pointer" title="Fechar">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 border-b border-slate-100 dark:border-slate-700 pb-3">
+                 <h3 class="text-base font-bold text-slate-800 dark:text-slate-100" id="max-chart-title"></h3>
+                 <div class="flex items-center gap-2 mr-8">
+                    <!-- Modal Group By Selector -->
+                    <div class="inline-flex rounded-md shadow-sm border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-0.5">
+                      <button id="modal-group-by-lot-btn" type="button" class="text-[10px] font-bold px-2 py-1 rounded transition-all cursor-pointer">
+                        Lote
+                      </button>
+                      <button id="modal-group-by-po-btn" type="button" class="text-[10px] font-bold px-2 py-1 rounded transition-all cursor-pointer">
+                        PO SAP
+                      </button>
+                    </div>
+                    
+                    <button id="modal-toggle-macro-view-btn" type="button" class="text-xs font-bold bg-slate-50 text-slate-500 hover:text-blue-600 px-2.5 py-1.5 flex items-center justify-center rounded hover:bg-slate-100 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 transition border border-slate-200 dark:border-slate-600 shadow-sm" title="Toggle Macro View">
+                      <i class="fas fa-layer-group mr-1"></i> Macro View
+                    </button>
+                 </div>
+            </div>
+            <div class="flex-grow w-full overflow-x-auto pb-4 relative cursor-grab active:cursor-grabbing custom-scrollbar">
+                <div id="max-chart-wrapper" class="h-full min-h-[400px]">
+                    <canvas id="maxLotChartCanvas"></canvas>
+                </div>
+            </div>
+            <div id="modal-macro-legend-container" class="mt-2 flex flex-wrap justify-center gap-4 border-t border-slate-100 dark:border-slate-700 pt-3 hidden"></div>
+        </div>
+    </div>
+    
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

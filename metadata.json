@@ -1,0 +1,8 @@
+{
+  "name": "KD Monitor Dashboard",
+  "description": "A tool to manage and track container delivery schedules from an Excel file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
