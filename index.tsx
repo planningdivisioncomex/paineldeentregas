@@ -4242,7 +4242,7 @@ fileUpload?.addEventListener("change", (e) => {
         const existing = existingMap.get(obj._id) || existingMap.get(normalizeText(obj["CONTAINER"])) || existingMap.get(normalizeText(obj["BL"]));
     if (existing) {
       if (existing["STATUS"] && existing["STATUS"] !== "PENDENTE") {
-        if (obj["STATUS"] === "PENDENTE" || obj["STATUS"] === "AGUARDANDO DESOVA" || col.STATUS < 0) {
+       if (obj["STATUS"] === "PENDENTE" || col.STATUS < 0) {
           obj["STATUS"] = existing["STATUS"];
         }
       }
