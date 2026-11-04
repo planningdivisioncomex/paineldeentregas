@@ -1662,9 +1662,9 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderCompany")}</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderVessel")}</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderWarehouse")}</th>
+              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">Online Date</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderLot")}</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">Pareto</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">${t("tableHeaderStatus")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -1676,17 +1676,28 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
                 const isKd = isKdRow(row);
                 const isSp = isSpRow(row);
                 const isPbp = isPbpRow(row);
+                // --- LÓGICA DE PRIORIDADE ---
+                const isPriorityExcel = String(row["PRIORIDADE"] || "").trim().toUpperCase();
+                const isPriority = row["IS_PRIORITY"] === true || isPriorityExcel === "SIM" || isPriorityExcel === "YES" || isPriorityExcel === "X" || isPriorityExcel === "1";
+                const rowHighlight = isPriority && status !== "ENTREGUE" && status !== "CANCELADO" ? "bg-red-50/50 dark:bg-red-900/10" : "";
+                // ----------------------------
                 const rowClass = `transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer ${
                   isBattery ? "is-battery" : ""
-                } ${isKd ? "is-kd" : ""} ${isSp ? "is-sp" : ""} ${isPbp ? "is-pbp" : ""} ${status === "ENTREGUE" ? "bg-green-100 dark:bg-green-900/30" : status === "CANCELADO" ? "bg-red-100 dark:bg-red-900/30" : status === "BACKLOG" ? "bg-orange-100 dark:bg-orange-900/30" : ""}`;
+                } ${isKd ? "is-kd" : ""} ${isSp ? "is-sp" : ""} ${isPbp ? "is-pbp" : ""} ${status === "ENTREGUE" ? "bg-green-100 dark:bg-green-900/30" : status === "CANCELADO" ? "bg-red-100 dark:bg-red-900/30" : status === "BACKLOG" ? "bg-orange-100 dark:bg-orange-900/30" : rowHighlight}`;0" : ""}`;
 
                 const plate = String(row["TRUCK LICENSE PLATE 1"] || row["PLATE"] || "").trim();
 
                 return `<tr class="${rowClass}" data-row-id="${row._id}">
-                  <td class="px-4 py-3 text-xs text-center border-l-8 ${isBattery ? "border-amber-600" : isKd ? "border-blue-700" : isSp ? "border-orange-600" : isPbp ? "border-emerald-600" : "border-transparent"}">${rowIndex + 1}</td>
+                  <td class="px-4 py-3 text-xs text-center border-l-8 ${isPriority ? "border-red-600" : isBattery ? "border-amber-600" : isKd ? "border-blue-700" : isSp ? "border-orange-600" : isPbp ? "border-emerald-600" : "border-transparent"}">${rowIndex + 1}</td>
                   <td class="px-4 py-3 text-xs font-semibold text-slate-800 dark:text-slate-100">
-                    ${row["CONTAINER"] || "-"}
+                    <div class="flex items-center gap-2">
+                      <button type="button" class="priority-toggle-btn text-[14px] transition-transform hover:scale-125 ${isPriority ? 'text-red-500' : 'text-slate-300 hover:text-red-400 dark:text-slate-600 dark:hover:text-red-500'}" data-row-id="${row._id}" title="Marcar/Desmarcar Prioridade" onclick="event.stopPropagation()">
+                        <i class="fas fa-flag"></i>
+                      </button>
+                      <span>${row["CONTAINER"] || "-"}</span>
+                    </div>
                     ${isBattery
+                      
                       ? `<span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 uppercase"><i class="fas fa-bolt mr-1"></i>${t(
                           "badgeBattery"
                         )}</span>`
@@ -1707,7 +1718,9 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["TRANSPORTATION COMPANY"] || "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["VESSEL"] || "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["BONDED WAREHOUSE"] || "-"}</td>
+                  <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["ONLINE DATE"] ? formatDate(row["ONLINE DATE"]) : "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["LOT"] || "-"}</td>
+                  <td class="px-4 py-3 text-xs" onclick="event.stopPropagation()">
                   <td class="px-4 py-3 text-xs" onclick="event.stopPropagation()">
                     <select class="pareto-select bg-white dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-500 text-xs rounded-md p-1 w-full" data-row-id="${row._id}">
                       <option value="-" ${pareto === "-" ? "selected" : ""}>-</option>
@@ -1863,9 +1876,33 @@ function handleRowInteraction(rowEl: HTMLTableRowElement) {
   setTimeout(() => (details.querySelector(".details-content-wrapper") as HTMLElement)?.classList.add("expanded"), 10);
 }
 
-deliveryContent?.addEventListener("click", (e) => {
-  const row = (e.target as HTMLElement).closest<HTMLTableRowElement>("tbody tr:not(.details-row)");
-  if (row && !(e.target as HTMLElement).closest(".status-select")) handleRowInteraction(row);
+deliveryContent?.addEventListener("click", async (e) => {
+  const target = e.target as HTMLElement;
+  
+  // Tratativa do clique na bandeira de Prioridade
+  const priorityBtn = target.closest<HTMLButtonElement>(".priority-toggle-btn");
+  if (priorityBtn) {
+    e.stopPropagation();
+    const rowId = priorityBtn.dataset.rowId || "";
+    const row = deliveryData.find((d) => d._id === rowId);
+    if (row) {
+      const isPriorityExcel = String(row["PRIORIDADE"] || "").trim().toUpperCase();
+      const isPriorityCurrently = row["IS_PRIORITY"] === true || isPriorityExcel === "SIM" || isPriorityExcel === "YES" || isPriorityExcel === "X" || isPriorityExcel === "1";
+      
+      row["IS_PRIORITY"] = !isPriorityCurrently;
+      if (!row["IS_PRIORITY"]) row["PRIORIDADE"] = ""; // Limpa o estado se desmarcado manualmente
+      
+      await saveStateToFirebase();
+      applyFiltersAndRender();
+    }
+    return;
+  }
+
+  // Comportamento normal de abrir os detalhes da linha
+  const row = target.closest<HTMLTableRowElement>("tbody tr:not(.details-row)");
+  if (row && !target.closest(".status-select") && !target.closest(".pareto-select")) {
+    handleRowInteraction(row);
+  }
 });
 
 /* ---------------------------- STATUS CHANGE ------------------------------- */
@@ -4190,6 +4227,8 @@ fileUpload?.addEventListener("change", (e) => {
         NF: pickIndex(headerIndex, ["NF", "NOTA FISCAL", "NFE"]),
         EMISSION_NF: pickIndex(headerIndex, ["EMISSÃO NF", "EMISSAO NF", "DATA NF"]),
         TYPE_OF_MATERIAL: pickIndex(headerIndex, ["TYPE OF MATERIAL", "MATERIAL", "TIPO DE MATERIAL", "TIPO", "MATERIAL TYPE"]),
+        ONLINE_DATE: pickIndex(headerIndex, ["ONLINE DATE", "DATA ONLINE", "ONLINE"]),
+        PRIORIDADE: pickIndex(headerIndex, ["PRIORIDADE", "PRIORITY", "URGENTE"]),
         STATUS: pickIndex(headerIndex, ["STATUS", "SITUACAO"]),
         TERMINAL_DEPARTURE: pickIndex(headerIndex, ["DATA E HORRÁRIO DA SAÍDA DO TERMINAL - INICIO DA ROTA NA PISTA EXPRESSA.", "TERMINAL - INICIO", "TERMINAL - INÍCIO", "SAÍDA TERMINAL", "TERMINAL - INÍCIO DE ROTA", "TERMINAL - INICIO DE ROTA"]),
         EMPTY_DELIVERED: pickIndex(headerIndex, ["DATA E HORARIO DE ENTREGA CONTAINER VAZIO", "ENTREGA VAZIO", "ENTREGA CONTAINER VAZIO", "DATA DEVOLUCAO VAZIO"]),
@@ -4231,6 +4270,8 @@ fileUpload?.addEventListener("change", (e) => {
         obj["NF"] = col.NF >= 0 ? safeValue(r[col.NF]) : "";
         obj["EMISSÃO NF"] = col.EMISSION_NF >= 0 ? safeValue(r[col.EMISSION_NF]) : "";
         obj["TYPE OF MATERIAL"] = col.TYPE_OF_MATERIAL >= 0 ? safeValue(r[col.TYPE_OF_MATERIAL]) : "";
+        obj["ONLINE DATE"] = col.ONLINE_DATE >= 0 ? safeValue(r[col.ONLINE_DATE]) : "";
+        obj["PRIORIDADE"] = col.PRIORIDADE >= 0 ? safeValue(r[col.PRIORIDADE]) : "";
         obj["TERMINAL - INÍCIO DE ROTA"] = col.TERMINAL_DEPARTURE >= 0 ? safeValue(r[col.TERMINAL_DEPARTURE]) : "";
         obj["ENTREGA VAZIO"] = col.EMPTY_DELIVERED >= 0 ? safeValue(r[col.EMPTY_DELIVERED]) : "";
         obj["DATA E HORARIO DE DESCARGA"] = col.UNLOAD_AT_BYD >= 0 ? safeValue(r[col.UNLOAD_AT_BYD]) : "";
@@ -4240,12 +4281,13 @@ fileUpload?.addEventListener("change", (e) => {
         obj._id = makeRowId(obj);
 
         const existing = existingMap.get(obj._id) || existingMap.get(normalizeText(obj["CONTAINER"])) || existingMap.get(normalizeText(obj["BL"]));
-    if (existing) {
-      if (existing["STATUS"] && existing["STATUS"] !== "PENDENTE") {
-       if (obj["STATUS"] === "PENDENTE" || col.STATUS < 0) {
-          obj["STATUS"] = existing["STATUS"];
-        }
-      }
+        if (existing) {
+          // CORREÇÃO DO BUG DO BACKLOG E DESOVA: Removido "!col.STATUS" e a trava limitadora
+          if (existing["STATUS"] && existing["STATUS"] !== "PENDENTE") {
+            if (obj["STATUS"] === "PENDENTE" || col.STATUS < 0) {
+              obj["STATUS"] = existing["STATUS"];
+            }
+          }
           if (existing["IN_LINE_TIMESTAMP"]) {
             obj["IN_LINE_TIMESTAMP"] = existing["IN_LINE_TIMESTAMP"];
           }
@@ -4254,6 +4296,10 @@ fileUpload?.addEventListener("change", (e) => {
           }
           if (existing["NOTES"] && !obj["NOTES"]) {
             obj["NOTES"] = existing["NOTES"];
+          }
+          // PRESERVAR PRIORIDADE CLICADA NO PAINEL
+          if (existing["IS_PRIORITY"] !== undefined) {
+            obj["IS_PRIORITY"] = existing["IS_PRIORITY"];
           }
         }
 
@@ -4343,7 +4389,7 @@ exportExcelBtn?.addEventListener("click", async () => {
   if (!deliveryData || deliveryData.length === 0) return showToast(t("noDataToExport"), "warning");
 
   const exportColumns = [
-    "STATUS", "DELIVERY AT BYD", "CONTAINER", "BL", "LOT", "MODEL", "OPERATION SCOPE", "RATIONALIZATION", "TRANSPORTATION COMPANY", 
+    "STATUS", "DELIVERY AT BYD", "CONTAINER", "BL", "LOT", "ONLINE DATE", "PRIORIDADE", "MODEL", "OPERATION SCOPE", "RATIONALIZATION", "TRANSPORTATION COMPANY", 
     "VESSEL", "BONDED WAREHOUSE", "DRIVER NAME", "CPF", "LICENSE P (Plate 1)", "LICENSE P (Plate 2)", "TRUCK TYPE",
     "TERMINAL - INÍCIO DE ROTA", 
     "DATA E HORARIO DE DESCARGA", 
@@ -4377,6 +4423,8 @@ exportExcelBtn?.addEventListener("click", async () => {
 
     const rowData = exportColumns.map(col => {
       if (col === "TIME OF OPERATION") return timeOfOp;
+      if (col === "PRIORIDADE") return (d["IS_PRIORITY"] === true) ? "SIM" : (d["PRIORIDADE"] || "");
+      if (col === "ONLINE DATE" && d[col]) return formatDate(d[col]);
       return d[col] ?? "";
     });
     aoa.push(rowData);
