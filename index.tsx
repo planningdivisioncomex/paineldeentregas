@@ -1683,7 +1683,12 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
                 // ----------------------------
                 const rowClass = `transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer ${
                   isBattery ? "is-battery" : ""
-                } ${isKd ? "is-kd" : ""} ${isSp ? "is-sp" : ""} ${isPbp ? "is-pbp" : ""} ${status === "ENTREGUE" ? "bg-green-100 dark:bg-green-900/30" : status === "CANCELADO" ? "bg-red-100 dark:bg-red-900/30" : status === "BACKLOG" ? "bg-orange-100 dark:bg-orange-900/30" : rowHighlight}`;0" : ""}`;
+                } ${isKd ? "is-kd" : ""} ${isSp ? "is-sp" : ""} ${isPbp ? "is-pbp" : ""} ${
+                  status === "ENTREGUE" ? "bg-green-100 dark:bg-green-900/30" : 
+                  status === "CANCELADO" ? "bg-red-100 dark:bg-red-900/30" : 
+                  status === "BACKLOG" ? "bg-orange-100 dark:bg-orange-900/30" : 
+                  rowHighlight
+                }`;
 
                 const plate = String(row["TRUCK LICENSE PLATE 1"] || row["PLATE"] || "").trim();
 
