@@ -1716,46 +1716,6 @@ function updateStats() {
   }
 }
 
-    emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
-    deliveryStatsTitle?.classList.toggle("hidden", dataForStats.length === 0);
-    emptyReturnStats.innerHTML = `
-      <div class="${getErCardClasses("PROGRAMADO")}" data-er-status="PROGRAMADO">
-        <div class="bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
-          <i class="fas fa-calendar-check text-sm"></i>
-        </div>
-        <div class="min-w-0">
-          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Programado</div>
-          <div class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erProgramado}</div>
-        </div>
-      </div>
-
-      <div class="${getErCardClasses("DEVOLVIDO")}" data-er-status="DEVOLVIDO">
-        <div class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
-          <i class="fas fa-check-double text-sm"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Devolvido</div>
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erDevolvido}</span>
-            <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">${getErPct(erDevolvido)}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="${getErCardClasses("PENDENTE")}" data-er-status="PENDENTE">
-        <div class="bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
-          <i class="fas fa-clock text-sm"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Pendentes</div>
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erPendente}</span>
-            <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400">${getErPct(erPendente)}</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
 function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null = null) {
   placeholder?.classList.add("hidden");
