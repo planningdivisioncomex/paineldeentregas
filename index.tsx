@@ -1418,16 +1418,27 @@ function updateStats() {
   if (showOnlyProject) {
     dataForStats = dataForStats.filter(row => isProjectRow(row));
   }
+// Atualiza o contador do botão 🚩 Prioridade (X) antes de filtrar por prioridade
+  const priorityCountEl = document.getElementById("priority-filter-count");
+  if (priorityCountEl) {
+    priorityCountEl.textContent = String(dataForStats.filter((d) => isPriorityRow(d)).length);
+  }
 
-  const total = dataForStats.length;
-  const delivered = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "ENTREGUE" && isRowCompletedInOperationalTime(d)).length;
-  const inTransit = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "A CAMINHO").length;
-  const postponed = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "ADIADO").length;
-  const canceled = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "CANCELADO").length;
-  const backlog = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "BACKLOG").length;
-  const inLineOutsideByd = dataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "IN LINE OUTSIDE BYD").length;
-  const awaitingUnload = dataForStats.filter((d) => 
-    normalizeText(d["STATUS"] || "") === "AGUARDANDO DESOVA" || 
+  if (showOnlyPriority) {
+    dataForStats = dataForStats.filter((row) => isPriorityRow(row));
+  }
+
+  // Separa os escopos: Entrega BYD conta apenas os internos da planta
+  const bydDataForStats = dataForStats.filter((d) => !isExternalDeliveryRow(d));
+  const total = bydDataForStats.length;
+  const delivered = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "ENTREGUE" && isRowCompletedInOperationalTime(d)).length;
+  const inTransit = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "A CAMINHO").length;
+  const postponed = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "ADIADO").length;
+  const canceled = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "CANCELADO").length;
+  const backlog = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "BACKLOG").length;
+  const inLineOutsideByd = bydDataForStats.filter((d) => normalizeText(d["STATUS"] || "") === "IN LINE OUTSIDE BYD").length;
+  const awaitingUnload = bydDataForStats.filter((d) =>
+    normalizeText(d["STATUS"] || "") === "AGUARDANDO DESOVA" ||
     (normalizeText(d["STATUS"] || "") === "ENTREGUE" && !isRowCompletedInOperationalTime(d))
   ).length;
   const pending = Math.max(0, total - delivered - inTransit - postponed - canceled - awaitingUnload - backlog - inLineOutsideByd);
@@ -1566,6 +1577,96 @@ function updateStats() {
       if (isActive) classes += " border-teal-500 ring-2 ring-teal-500/50 scale-[1.02] z-10";
       else classes += " border-slate-200 dark:border-slate-700 hover:border-teal-300";
       return classes;
+      // --- RENDERIZAÇÃO DOS CARDS DE ENTREGA EXTERNA ---
+  if (externalDeliverySection && externalDeliveryStats) {
+    const externalRows = dataForStats.filter((d) => isExternalDeliveryRow(d));
+    externalDeliverySection.classList.toggle("hidden", externalRows.length === 0);
+
+    if (externalRows.length > 0) {
+      const extTotal = externalRows.length;
+      const extDelivered = externalRows.filter((d) => normalizeText(d["STATUS"] || "") === "ENTREGUE").length;
+      const extUnloadTotal = externalRows.filter((d) => isExternalUnloadRow(d)).length;
+      const extNoUnloadTotal = extTotal - extUnloadTotal;
+      const extPct = extTotal > 0 ? `${((extDelivered / extTotal) * 100).toFixed(1)}%` : "0.0%";
+
+      // Agrupa dinamicamente por parceiro (BIGLOG, TPC, GABARDO, etc.)
+      const bySite: Record<string, { total: number; delivered: number; unload: number; unloadDone: number; noUnload: number; noUnloadDone: number }> = {};
+      externalRows.forEach((row) => {
+        const site = getExternalSiteName(row);
+        if (!bySite[site]) bySite[site] = { total: 0, delivered: 0, unload: 0, unloadDone: 0, noUnload: 0, noUnloadDone: 0 };
+        const isDone = normalizeText(row["STATUS"] || "") === "ENTREGUE";
+        const isUnload = isExternalUnloadRow(row);
+        bySite[site].total++;
+        if (isDone) bySite[site].delivered++;
+        if (isUnload) {
+          bySite[site].unload++;
+          if (isDone) bySite[site].unloadDone++;
+        } else {
+          bySite[site].noUnload++;
+          if (isDone) bySite[site].noUnloadDone++;
+        }
+      });
+
+      const getExtCardClasses = (key: string) => {
+        const isActive = activeExternalFilter === key;
+        let classes =
+          "summary-card bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border flex flex-col justify-between cursor-pointer transition-all duration-200";
+        if (isActive) classes += " border-indigo-500 ring-2 ring-indigo-500/50 scale-[1.02] z-10";
+        else classes += " border-slate-200 dark:border-slate-700 hover:border-indigo-300";
+        return classes;
+      };
+
+      const siteCardsHtml = Object.entries(bySite)
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([site, st]) => {
+          const pct = st.total > 0 ? `${((st.delivered / st.total) * 100).toFixed(1)}%` : "0.0%";
+          return `
+            <div class="${getExtCardClasses(site)}" data-ext-site="${site}">
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center min-w-0">
+                  <div class="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-full h-7 w-7 flex items-center justify-center mr-2 flex-shrink-0">
+                    <i class="fas fa-warehouse text-xs"></i>
+                  </div>
+                  <div class="text-slate-700 dark:text-slate-200 text-[10px] font-extrabold uppercase tracking-wider truncate" title="${site}">${site}</div>
+                </div>
+                <span class="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40 px-1.5 py-0.5 rounded">${pct}</span>
+              </div>
+              <div class="flex items-baseline justify-between mb-1.5">
+                <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${st.total}</span>
+                <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">${st.delivered} entregues</span>
+              </div>
+              <div class="border-t border-slate-100 dark:border-slate-700 pt-1.5 flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400">
+                <span>Desova: <strong class="text-slate-700 dark:text-slate-200">${st.unloadDone}/${st.unload}</strong></span>
+                <span>Sem Desova: <strong class="text-slate-700 dark:text-slate-200">${st.noUnloadDone}/${st.noUnload}</strong></span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+
+      externalDeliveryStats.innerHTML = `
+        <div class="${getExtCardClasses("ALL_EXTERNAL")}" data-ext-site="ALL_EXTERNAL">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <div class="flex items-center min-w-0">
+              <div class="bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 rounded-full h-7 w-7 flex items-center justify-center mr-2 flex-shrink-0">
+                <i class="fas fa-boxes text-xs"></i>
+              </div>
+              <div class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider truncate">Total Externo</div>
+            </div>
+            <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">${extPct}</span>
+          </div>
+          <div class="flex items-baseline justify-between mb-1.5">
+            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${extTotal}</span>
+            <span class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">${extDelivered} entregues</span>
+          </div>
+          <div class="border-t border-slate-100 dark:border-slate-700 pt-1.5 flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400">
+            <span>Desova: <strong class="text-slate-700 dark:text-slate-200">${extUnloadTotal}</strong></span>
+            <span>Sem Desova: <strong class="text-slate-700 dark:text-slate-200">${extNoUnloadTotal}</strong></span>
+          </div>
+        </div>
+        ${siteCardsHtml}
+      `;
+    }
     };
 
     emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
