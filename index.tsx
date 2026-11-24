@@ -1300,8 +1300,12 @@ function applyFiltersAndRender(activeTabId: string | null = null) {
   if (showOnlyProject) {
     filteredData = filteredData.filter(row => isProjectRow(row));
   }
+  if (showOnlyPriority) {
+    filteredData = filteredData.filter((row) => isPriorityRow(row));
+  }
 
-  if (activeStatusFilter) {
+ if (activeStatusFilter) {
+    filteredData = filteredData.filter((row) => !isExternalDeliveryRow(row));
     if (activeStatusFilter === "PENDENTE") {
       filteredData = filteredData.filter((row) => {
         const status = normalizeText(row["STATUS"] || "");
@@ -1321,7 +1325,6 @@ function applyFiltersAndRender(activeTabId: string | null = null) {
       filteredData = filteredData.filter((row) => normalizeText(row["STATUS"] || "") === activeStatusFilter);
     }
   }
-
 
   // --- ADICIONE AQUI ---
   if (activeEmptyReturnFilter) {
