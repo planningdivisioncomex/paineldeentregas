@@ -1098,7 +1098,6 @@ function isPriorityRow(row: any): boolean {
   const p = normalizeText(row["PRIORIDADE"] || "");
   return row["IS_PRIORITY"] === true || ["SIM", "YES", "X", "1", "ALTA", "HIGH", "URGENTE", "P1"].includes(p);
 }
-}
 
 function formatDate(v: any): string {
   const d = toDateMaybe(v);
