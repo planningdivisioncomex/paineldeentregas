@@ -1756,7 +1756,6 @@ function updateStats() {
       </div>
     `;
   }
-}
 
 function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null = null) {
   placeholder?.classList.add("hidden");
