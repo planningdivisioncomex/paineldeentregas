@@ -515,6 +515,7 @@ let historicalData: DeliveryRow[] = [];
 let dailyCarrierNotes: Record<string, Record<string, { motivo: string, impacto: string }>> = {};
 let searchDebounceTimer: number;
 let activeStatusFilter: string | null = null;
+let activeEmptyReturnFilter: "PROGRAMADO" | "DEVOLVIDO" | "PENDENTE" | null = null;
 let showOnlyBattery: boolean = false;
 let showOnlyKd: boolean = false;
 let showOnlySp: boolean = false;
@@ -1046,6 +1047,22 @@ function isRowCompletedInOperationalTime(row: any): boolean {
   }
 }
 
+function isEmptyReturnOperation(row: any): boolean {
+  const op = normalizeText(row["OPERATION SCOPE"] || "");
+  return op.includes("SWAP") || op.includes("EMPTY RETURN");
+}
+
+function isEmptyReturnCompleted(row: any): boolean {
+  return isEmptyReturnOperation(row) && Boolean(toDateTimeMaybe(row["ENTREGA VAZIO"]));
+}
+
+  if (isBaixa) {
+    return !!(startDt && status === "ENTREGUE");
+  } else {
+    return !!(startDt && endDt);
+  }
+}
+
 function formatDate(v: any): string {
   const d = toDateMaybe(v);
   if (!d) return String(safeValue(v) || t("dateNotAvailable"));
@@ -1127,6 +1144,7 @@ function resetUI() {
     placeholder?.classList.remove("hidden");
     deliveryDashboard?.classList.add("hidden");
     summaryStats?.classList.add("hidden");
+    emptyReturnSection?.classList.add("hidden");
     lotSearchContainer?.classList.add("hidden");
     exportExcelBtn?.classList.add("hidden");
     exportPdfBtn?.classList.add("hidden");
@@ -1264,7 +1282,24 @@ function applyFiltersAndRender(activeTabId: string | null = null) {
       filteredData = filteredData.filter((row) => normalizeText(row["STATUS"] || "") === activeStatusFilter);
     }
   }
+  } else {
+      filteredData = filteredData.filter((row) => normalizeText(row["STATUS"] || "") === activeStatusFilter);
+    }
+  }
 
+  // --- ADICIONE AQUI ---
+  if (activeEmptyReturnFilter) {
+    if (activeEmptyReturnFilter === "PROGRAMADO") {
+      filteredData = filteredData.filter((row) => isEmptyReturnOperation(row));
+    } else if (activeEmptyReturnFilter === "DEVOLVIDO") {
+      filteredData = filteredData.filter((row) => isEmptyReturnCompleted(row));
+    } else if (activeEmptyReturnFilter === "PENDENTE") {
+      filteredData = filteredData.filter((row) => isEmptyReturnOperation(row) && !isEmptyReturnCompleted(row));
+    }
+  }
+  // ---------------------
+
+ 
   if (query) {
     const searchTerms = query.split(/[\s,\n\t]+/).filter(t => t.length > 0);
     filteredData = filteredData.filter((row) => {
@@ -1667,6 +1702,7 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">Online Date</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderLot")}</th>
               <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">Pareto</th>
+              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">${t("tableHeaderStatus")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
@@ -1727,7 +1763,6 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["BONDED WAREHOUSE"] || "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["ONLINE DATE"] ? formatDate(row["ONLINE DATE"]) : "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["LOT"] || "-"}</td>
-                  <td class="px-4 py-3 text-xs" onclick="event.stopPropagation()">
                   <td class="px-4 py-3 text-xs" onclick="event.stopPropagation()">
                     <select class="pareto-select bg-white dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-500 text-xs rounded-md p-1 w-full" data-row-id="${row._id}">
                       <option value="-" ${pareto === "-" ? "selected" : ""}>-</option>
