@@ -2369,11 +2369,22 @@ projectFilterBtn?.addEventListener("click", () => {
 });
 
 /* -------------------------- STATUS FILTER CARDS ---------------------------- */
+priorityFilterBtn?.addEventListener("click", () => {
+  showOnlyPriority = !showOnlyPriority;
+  priorityFilterBtn.classList.toggle("ring-2", showOnlyPriority);
+  priorityFilterBtn.classList.toggle("ring-red-500", showOnlyPriority);
+  priorityFilterBtn.classList.toggle("bg-red-50", showOnlyPriority);
+  priorityFilterBtn.classList.toggle("dark:bg-red-900/30", showOnlyPriority);
+  applyFiltersAndRender();
+});
+
+/* -------------------------- STATUS FILTER CARDS ---------------------------- */
 summaryStats?.addEventListener("click", (e) => {
   const card = (e.target as HTMLElement).closest<HTMLDivElement>("[data-status]");
   if (card) {
     const s = card.dataset.status!;
     activeEmptyReturnFilter = null;
+    activeExternalFilter = null;
     activeStatusFilter = s === "ALL" ? null : activeStatusFilter === s ? null : s;
     applyFiltersAndRender();
   }
@@ -2384,7 +2395,19 @@ emptyReturnStats?.addEventListener("click", (e) => {
   if (card) {
     const s = card.dataset.erStatus as "PROGRAMADO" | "DEVOLVIDO" | "PENDENTE";
     activeStatusFilter = null;
+    activeExternalFilter = null;
     activeEmptyReturnFilter = activeEmptyReturnFilter === s ? null : s;
+    applyFiltersAndRender();
+  }
+});
+
+externalDeliveryStats?.addEventListener("click", (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLDivElement>("[data-ext-site]");
+  if (card) {
+    const site = card.dataset.extSite!;
+    activeStatusFilter = null;
+    activeEmptyReturnFilter = null;
+    activeExternalFilter = activeExternalFilter === site ? null : site;
     applyFiltersAndRender();
   }
 });
