@@ -1333,7 +1333,11 @@ function applyFiltersAndRender(activeTabId: string | null = null) {
     } else if (activeEmptyReturnFilter === "DEVOLVIDO") {
       filteredData = filteredData.filter((row) => isEmptyReturnCompleted(row));
     } else if (activeEmptyReturnFilter === "PENDENTE") {
-      filteredData = filteredData.filter((row) => isEmptyReturnOperation(row) && !isEmptyReturnCompleted(row));
+      filteredData = filteredData.filter((row) => isEmptyReturnOperation(row) && !isEmptyReturnCompleted(row));if (activeExternalFilter) {
+    if (activeExternalFilter === "ALL_EXTERNAL") {
+      filteredData = filteredData.filter((row) => isExternalDeliveryRow(row));
+    } else {
+      filteredData = filteredData.filter((row) => getExternalSiteName(row) === activeExternalFilter);
     }
   }
   // ---------------------
