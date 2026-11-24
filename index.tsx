@@ -1056,13 +1056,6 @@ function isEmptyReturnCompleted(row: any): boolean {
   return isEmptyReturnOperation(row) && Boolean(toDateTimeMaybe(row["ENTREGA VAZIO"]));
 }
 
-  if (isBaixa) {
-    return !!(startDt && status === "ENTREGUE");
-  } else {
-    return !!(startDt && endDt);
-  }
-}
-
 function formatDate(v: any): string {
   const d = toDateMaybe(v);
   if (!d) return String(safeValue(v) || t("dateNotAvailable"));
