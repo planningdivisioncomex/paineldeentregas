@@ -52,6 +52,9 @@ try {
 const deliveryStatsTitle = document.getElementById("delivery-stats-title") as HTMLDivElement;
 const emptyReturnSection = document.getElementById("empty-return-section") as HTMLDivElement;
 const emptyReturnStats = document.getElementById("empty-return-stats") as HTMLDivElement;
+const externalDeliverySection = document.getElementById("external-delivery-section") as HTMLDivElement;
+const externalDeliveryStats = document.getElementById("external-delivery-stats") as HTMLDivElement;
+const priorityFilterBtn = document.getElementById("priority-filter-btn") as HTMLButtonElement;
 const fileUpload = document.getElementById("file-upload") as HTMLInputElement;
 const searchInput = document.getElementById("search-input") as HTMLInputElement;
 const lastUpdate = document.getElementById("last-update") as HTMLParagraphElement;
@@ -517,6 +520,8 @@ let dailyCarrierNotes: Record<string, Record<string, { motivo: string, impacto: 
 let searchDebounceTimer: number;
 let activeStatusFilter: string | null = null;
 let activeEmptyReturnFilter: "PROGRAMADO" | "DEVOLVIDO" | "PENDENTE" | null = null;
+let activeExternalFilter: string | null = null;
+let showOnlyPriority: boolean = false;
 let showOnlyBattery: boolean = false;
 let showOnlyKd: boolean = false;
 let showOnlySp: boolean = false;
@@ -1054,7 +1059,45 @@ function isEmptyReturnOperation(row: any): boolean {
 }
 
 function isEmptyReturnCompleted(row: any): boolean {
-  return isEmptyReturnOperation(row) && Boolean(toDateTimeMaybe(row["ENTREGA VAZIO"]));
+  if (!isEmptyReturnOperation(row)) return false;
+  const hasReturnDate = Boolean(toDateTimeMaybe(row["ENTREGA VAZIO"]));
+  const op = normalizeText(row["OPERATION SCOPE"] || "");
+  if (op.includes("SWAP")) {
+    const emptyCntr = String(safeValue(row["N EMPTY CNTR"]) || "").trim();
+    const hasEmptyCntr = Boolean(emptyCntr && emptyCntr !== "-" && emptyCntr !== "0");
+    return hasReturnDate && hasEmptyCntr;
+  }
+  return hasReturnDate;
+}
+
+function getExternalSiteName(row: any): string {
+  const site = String(safeValue(row["DELIVERY SITE"]) || "").trim();
+  if (!site || site === "0" || site === "-") return "";
+  const norm = normalizeText(site);
+  const isInternalByd =
+    norm.includes("BYD") ||
+    norm.includes("BUFFER") ||
+    norm.includes("FACTORY") ||
+    norm.includes("WAREHOUSE") ||
+    norm.includes("FABRICA") ||
+    norm.includes("PLANTA") ||
+    /^\d+\s*-/.test(norm);
+  return isInternalByd ? "" : norm;
+}
+
+function isExternalDeliveryRow(row: any): boolean {
+  return getExternalSiteName(row) !== "";
+}
+
+function isExternalUnloadRow(row: any): boolean {
+  const op = normalizeText(row["OPERATION SCOPE"] || "");
+  return op.includes("UNLOAD") || op.includes("DESOVA");
+}
+
+function isPriorityRow(row: any): boolean {
+  const p = normalizeText(row["PRIORIDADE"] || "");
+  return row["IS_PRIORITY"] === true || ["SIM", "YES", "X", "1", "ALTA", "HIGH", "URGENTE", "P1"].includes(p);
+}
 }
 
 function formatDate(v: any): string {
@@ -1137,6 +1180,7 @@ function resetUI() {
   if (deliveryData.length === 0 && historicalData.length === 0) {
     placeholder?.classList.remove("hidden");
     deliveryDashboard?.classList.add("hidden");
+    externalDeliverySection?.classList.add("hidden");
     deliveryStatsTitle?.classList.add("hidden");
     summaryStats?.classList.add("hidden");
     emptyReturnSection?.classList.add("hidden");
