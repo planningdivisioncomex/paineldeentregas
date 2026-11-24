@@ -49,6 +49,8 @@ try {
 }
 
 /* ------------------------------- DOM Elements ------------------------------ */
+const emptyReturnSection = document.getElementById("empty-return-section") as HTMLDivElement;
+const emptyReturnStats = document.getElementById("empty-return-stats") as HTMLDivElement;
 const fileUpload = document.getElementById("file-upload") as HTMLInputElement;
 const searchInput = document.getElementById("search-input") as HTMLInputElement;
 const lastUpdate = document.getElementById("last-update") as HTMLParagraphElement;
