@@ -49,6 +49,7 @@ try {
 }
 
 /* ------------------------------- DOM Elements ------------------------------ */
+const deliveryStatsTitle = document.getElementById("delivery-stats-title") as HTMLDivElement;
 const emptyReturnSection = document.getElementById("empty-return-section") as HTMLDivElement;
 const emptyReturnStats = document.getElementById("empty-return-stats") as HTMLDivElement;
 const fileUpload = document.getElementById("file-upload") as HTMLInputElement;
@@ -1136,6 +1137,7 @@ function resetUI() {
   if (deliveryData.length === 0 && historicalData.length === 0) {
     placeholder?.classList.remove("hidden");
     deliveryDashboard?.classList.add("hidden");
+    deliveryStatsTitle?.classList.add("hidden");
     summaryStats?.classList.add("hidden");
     emptyReturnSection?.classList.add("hidden");
     lotSearchContainer?.classList.add("hidden");
@@ -1516,6 +1518,7 @@ function updateStats() {
     };
 
     emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
+    deliveryStatsTitle?.classList.toggle("hidden", dataForStats.length === 0);
     emptyReturnStats.innerHTML = `
       <div class="${getErCardClasses("PROGRAMADO")}" data-er-status="PROGRAMADO">
         <div class="bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
