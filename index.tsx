@@ -1581,7 +1581,50 @@ function updateStats() {
       if (isActive) classes += " border-teal-500 ring-2 ring-teal-500/50 scale-[1.02] z-10";
       else classes += " border-slate-200 dark:border-slate-700 hover:border-teal-300";
       return classes;
-      // --- RENDERIZAÇÃO DOS CARDS DE ENTREGA EXTERNA ---
+    };
+
+    emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
+    deliveryStatsTitle?.classList.toggle("hidden", dataForStats.length === 0);
+    emptyReturnStats.innerHTML = `
+      <div class="${getErCardClasses("PROGRAMADO")}" data-er-status="PROGRAMADO">
+        <div class="bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-calendar-check text-sm"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Programado</div>
+          <div class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erProgramado}</div>
+        </div>
+      </div>
+
+      <div class="${getErCardClasses("DEVOLVIDO")}" data-er-status="DEVOLVIDO">
+        <div class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-check-double text-sm"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Devolvido</div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erDevolvido}</span>
+            <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">${getErPct(erDevolvido)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="${getErCardClasses("PENDENTE")}" data-er-status="PENDENTE">
+        <div class="bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-clock text-sm"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Pendentes</div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erPendente}</span>
+            <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400">${getErPct(erPendente)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // --- RENDERIZAÇÃO DOS CARDS DE ENTREGA EXTERNA ---
   if (externalDeliverySection && externalDeliveryStats) {
     const externalRows = dataForStats.filter((d) => isExternalDeliveryRow(d));
     externalDeliverySection.classList.toggle("hidden", externalRows.length === 0);
@@ -1593,7 +1636,6 @@ function updateStats() {
       const extNoUnloadTotal = extTotal - extUnloadTotal;
       const extPct = extTotal > 0 ? `${((extDelivered / extTotal) * 100).toFixed(1)}%` : "0.0%";
 
-      // Agrupa dinamicamente por parceiro (BIGLOG, TPC, GABARDO, etc.)
       const bySite: Record<string, { total: number; delivered: number; unload: number; unloadDone: number; noUnload: number; noUnloadDone: number }> = {};
       externalRows.forEach((row) => {
         const site = getExternalSiteName(row);
@@ -1671,7 +1713,8 @@ function updateStats() {
         ${siteCardsHtml}
       `;
     }
-    };
+  }
+}
 
     emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
     deliveryStatsTitle?.classList.toggle("hidden", dataForStats.length === 0);
