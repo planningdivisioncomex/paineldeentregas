@@ -79,6 +79,11 @@
                         <button id="project-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center font-bold text-purple-600 h-[42px] shrink-0" aria-label="Filtrar Project Cargo" data-i18n-aria-label="filterProjectTooltip" title="Filtrar Project Cargo" data-i18n-title="filterProjectTooltip">
                             PC
                         </button>
+                        <button id="priority-filter-btn" class="bg-white dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-600 text-gray-700 px-3 py-2 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-50 transition-all duration-300 flex items-center gap-1.5 font-bold text-red-600 dark:text-red-400 h-[42px] shrink-0 text-xs" aria-label="Filtrar Prioridades" title="Filtrar Prioridades">
+                            <i class="fas fa-flag"></i>
+                            <span>Prioridade</span>
+                            <span id="priority-filter-count" class="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold">0</span>
+                        </button>
                     </div>
 
                     <div class="flex items-center gap-1.5 ml-auto md:ml-0 shrink-0">
@@ -154,14 +159,14 @@
             <!-- Stats will be injected here -->
          </div>
 
-        <!-- NOVO: Visibilidade de Devolução de Vazios -->
-        <div id="empty-return-section" class="hidden mb-6">
+  <!-- NOVO: Visibilidade de Entrega Externa -->
+        <div id="external-delivery-section" class="hidden mb-6">
             <div class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <i class="fas fa-undo-alt text-teal-600 dark:text-teal-400"></i>
-                <span>Operação de Devolução de Vazios (SWAP / Empty Return)</span>
+                <i class="fas fa-warehouse text-indigo-600 dark:text-indigo-400"></i>
+                <span>Entrega Externa</span>
             </div>
-            <div id="empty-return-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
-                <!-- Cards de Devolução de Vazios serão injetados aqui -->
+            <div id="external-delivery-stats" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <!-- Cards de Entrega Externa serão injetados aqui -->
             </div>
         </div>
         </div>
