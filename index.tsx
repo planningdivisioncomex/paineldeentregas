@@ -4487,6 +4487,10 @@ fileUpload?.addEventListener("change", (e) => {
 
       const col = {
         DELIVERY_AT_BYD: pickIndex(headerIndex, ["DELIVERY AT BYD", "DELIVERY AT", "DELIVERY", "DATA DE ENTREGA", "ENTREGA", "DATA DE PROGRAMACAO / SCHEDULED DATE"]),
+        DELIVERY_SITE: pickIndex(headerIndex, ["DELIVERY SITE", "LOCAL DE DESCARGA / UNLOADING LOCATION", "LOCAL DE DESCARGA", "DELIVERY PLACE"]),
+        LOT: pickIndex(headerIndex, ["LOT", "LOTE", "LOTE / BATCH", "BATCH", "VIRTUAL LOT"]),
+        N_EMPTY_CNTR: pickIndex(headerIndex, ["Nº EMPTY CNTR", "N EMPTY CNTR", "NO EMPTY CNTR", "EMPTY CNTR", "CONTAINER VAZIO"]),
+        COST_JUSTIFICATION: pickIndex(headerIndex, ["COST JUSTIFICATION", "JUSTIFICATIVA DE CUSTO", "JUSTIFICATIVA CUSTO"]),
         UNLOAD_TIME_BYD: pickIndex(headerIndex, ["UNLOAD TIME BYD", "UNLOAD TIME", "TEMPO DESCARGA", "HORARIO DE ENTREGA / DELIVERY TIME"]),
         OPERATION_SCOPE: pickIndex(headerIndex, ["OPERATION SCOPE", "ESCOPO OPERACAO / OPERATION SCOPE", "ESCOPO DA OPERACAO"]),
         TRANSPORTATION_COMPANY: pickIndex(headerIndex, ["TRANSPORTATION COMPANY", "CARRIER", "TRANSPORTADORA", "TRANSPORTADOR", "TRANSPORTADORA / TRUCK COMPANY"]),
@@ -4531,6 +4535,9 @@ fileUpload?.addEventListener("change", (e) => {
         
         obj["DELIVERY AT BYD"] = col.DELIVERY_AT_BYD >= 0 ? safeValue(r[col.DELIVERY_AT_BYD]) : "";
         obj["UNLOAD TIME BYD"] = col.UNLOAD_TIME_BYD >= 0 ? safeValue(r[col.UNLOAD_TIME_BYD]) : "";
+        obj["DELIVERY SITE"] = col.DELIVERY_SITE >= 0 ? safeValue(r[col.DELIVERY_SITE]) : "";
+        obj["N EMPTY CNTR"] = col.N_EMPTY_CNTR >= 0 ? safeValue(r[col.N_EMPTY_CNTR]) : "";
+        obj["COST JUSTIFICATION"] = col.COST_JUSTIFICATION >= 0 ? safeValue(r[col.COST_JUSTIFICATION]) : "";
         obj["OPERATION SCOPE"] = col.OPERATION_SCOPE >= 0 ? safeValue(r[col.OPERATION_SCOPE]) : (obj["OPERATION SCOPE"] || "");
         obj["TRANSPORTATION COMPANY"] = col.TRANSPORTATION_COMPANY >= 0 ? safeValue(r[col.TRANSPORTATION_COMPANY]) : "";
         obj["CONTAINER"] = col.CONTAINER >= 0 ? safeValue(r[col.CONTAINER]) : "";
