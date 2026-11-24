@@ -4550,7 +4550,6 @@ fileUpload?.addEventListener("change", (e) => {
         BONDED_WAREHOUSE: pickIndex(headerIndex, ["BONDED WAREHOUSE", "ARMAZEM", "RECINTO", "WAREHOUSE", "ARMAZEM / WAREHOUSE"]),
         MODEL: pickIndex(headerIndex, ["MODEL", "MODELO", "MODELO / MODEL"]),
         RATIONALIZATION: pickIndex(headerIndex, ["RATIONALIZATION", "RATIONALIZACAO", "RACIONALIZACAO"]),
-        LOT: pickIndex(headerIndex, ["LOT", "LOTE", "LOTE / BATCH"]),
         DRIVER_NAME: pickIndex(headerIndex, ["DRIVER NAME", "MOTORISTA"]),
         CPF: pickIndex(headerIndex, ["CPF"]),
         PLATE1: pickIndex(headerIndex, ["LICENSE P (Plate 1)", "PLACA 1", "PLATE 1"]),
