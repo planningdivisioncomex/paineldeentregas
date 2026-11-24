@@ -4687,7 +4687,7 @@ exportExcelBtn?.addEventListener("click", async () => {
     "DATA E HORARIO DE DESCARGA", 
     "ENTREGA VAZIO", 
     "TIME OF OPERATION",
-    "LOAD TIME", "DEPOT SCA", "SALVADOR", "PO SAP", "NF", "EMISSÃO NF", "NOTES", "PARETO"
+    "LOAD TIME", "DEPOT SCA", "SALVADOR", "PO SAP", "NF", "EMISSÃO NF", "DELIVERY SITE", "N EMPTY CNTR", "COST JUSTIFICATION", "NOTES", "PARETO"
   ];
 
   // Create Title Row
