@@ -1282,10 +1282,7 @@ function applyFiltersAndRender(activeTabId: string | null = null) {
       filteredData = filteredData.filter((row) => normalizeText(row["STATUS"] || "") === activeStatusFilter);
     }
   }
-  } else {
-      filteredData = filteredData.filter((row) => normalizeText(row["STATUS"] || "") === activeStatusFilter);
-    }
-  }
+
 
   // --- ADICIONE AQUI ---
   if (activeEmptyReturnFilter) {
@@ -1503,10 +1500,67 @@ function updateStats() {
       <div class="min-w-0">
         <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">${t("canceled")}</div>
         <div class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${canceled}</div>
-        <div class="text-[9px] font-bold text-red-600 dark:text-red-400">${getPercentage(canceled)}</div>
+<div class="text-[9px] font-bold text-red-600 dark:text-red-400">${getPercentage(canceled)}</div>
       </div>
     </div>
   `;
+
+  // --- RENDERIZAÇÃO DOS 3 CARDS DE DEVOLUÇÃO DE VAZIOS ---
+  if (emptyReturnSection && emptyReturnStats) {
+    const emptyReturnRows = dataForStats.filter((d) => isEmptyReturnOperation(d));
+    const erProgramado = emptyReturnRows.length;
+    const erDevolvido = emptyReturnRows.filter((d) => isEmptyReturnCompleted(d)).length;
+    const erPendente = Math.max(0, erProgramado - erDevolvido);
+    const getErPct = (count: number) => (erProgramado === 0 ? "0.0%" : `${((count / erProgramado) * 100).toFixed(1)}%`);
+
+    const getErCardClasses = (filterKey: "PROGRAMADO" | "DEVOLVIDO" | "PENDENTE") => {
+      const isActive = activeEmptyReturnFilter === filterKey;
+      let classes =
+        "summary-card bg-white dark:bg-slate-800 p-3 rounded-lg shadow-sm border flex items-center cursor-pointer transition-all duration-200";
+      if (isActive) classes += " border-teal-500 ring-2 ring-teal-500/50 scale-[1.02] z-10";
+      else classes += " border-slate-200 dark:border-slate-700 hover:border-teal-300";
+      return classes;
+    };
+
+    emptyReturnSection.classList.toggle("hidden", dataForStats.length === 0);
+    emptyReturnStats.innerHTML = `
+      <div class="${getErCardClasses("PROGRAMADO")}" data-er-status="PROGRAMADO">
+        <div class="bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-calendar-check text-sm"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Programado</div>
+          <div class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erProgramado}</div>
+        </div>
+      </div>
+
+      <div class="${getErCardClasses("DEVOLVIDO")}" data-er-status="DEVOLVIDO">
+        <div class="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-check-double text-sm"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Devolvido</div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erDevolvido}</span>
+            <span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400">${getErPct(erDevolvido)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="${getErCardClasses("PENDENTE")}" data-er-status="PENDENTE">
+        <div class="bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 rounded-full h-8 w-8 flex items-center justify-center mr-2 flex-shrink-0">
+          <i class="fas fa-clock text-sm"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-slate-500 dark:text-slate-400 text-[9px] font-semibold uppercase tracking-wider truncate">Pendentes</div>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-lg font-extrabold text-slate-800 dark:text-slate-100">${erPendente}</span>
+            <span class="text-[9px] font-bold text-amber-600 dark:text-amber-400">${getErPct(erPendente)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null = null) {
@@ -2171,7 +2225,18 @@ summaryStats?.addEventListener("click", (e) => {
   const card = (e.target as HTMLElement).closest<HTMLDivElement>("[data-status]");
   if (card) {
     const s = card.dataset.status!;
+    activeEmptyReturnFilter = null;
     activeStatusFilter = s === "ALL" ? null : activeStatusFilter === s ? null : s;
+    applyFiltersAndRender();
+  }
+});
+
+emptyReturnStats?.addEventListener("click", (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLDivElement>("[data-er-status]");
+  if (card) {
+    const s = card.dataset.erStatus as "PROGRAMADO" | "DEVOLVIDO" | "PENDENTE";
+    activeStatusFilter = null;
+    activeEmptyReturnFilter = activeEmptyReturnFilter === s ? null : s;
     applyFiltersAndRender();
   }
 });
@@ -4240,23 +4305,27 @@ fileUpload?.addEventListener("change", (e) => {
       if (!sheet) throw new Error("Sheet not found");
 
       const rawData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
-      let hRow = rawData.findIndex((r) => r.some((c) => normalizeText(c) === "CONTAINER"));
+     let hRow = rawData.findIndex((r) => r.some((c) => {
+        const n = normalizeText(c);
+        return n === "CONTAINER" || n === "CONTAINER / CONTAINER";
+      }));
       if (hRow === -1) hRow = 0;
 
       const headers = rawData[hRow] || [];
       const headerIndex = buildHeaderIndex(headers);
 
       const col = {
-        DELIVERY_AT_BYD: pickIndex(headerIndex, ["DELIVERY AT BYD", "DELIVERY AT", "DELIVERY", "DATA DE ENTREGA", "ENTREGA"]),
-        UNLOAD_TIME_BYD: pickIndex(headerIndex, ["UNLOAD TIME BYD", "UNLOAD TIME", "TEMPO DESCARGA"]),
-        TRANSPORTATION_COMPANY: pickIndex(headerIndex, ["TRANSPORTATION COMPANY", "CARRIER", "TRANSPORTADORA", "TRANSPORTADOR"]),
-        CONTAINER: pickIndex(headerIndex, ["CONTAINER", "CNTR"]),
-        BL: pickIndex(headerIndex, ["BL", "B/L", "BL NUMBER"]),
-        VESSEL: pickIndex(headerIndex, ["VESSEL", "NAVIO", "NAVIO/VIAGEM"]),
-        BONDED_WAREHOUSE: pickIndex(headerIndex, ["BONDED WAREHOUSE", "ARMAZEM", "RECINTO", "WAREHOUSE"]),
-        MODEL: pickIndex(headerIndex, ["MODEL", "MODELO"]),
+        DELIVERY_AT_BYD: pickIndex(headerIndex, ["DELIVERY AT BYD", "DELIVERY AT", "DELIVERY", "DATA DE ENTREGA", "ENTREGA", "DATA DE PROGRAMACAO / SCHEDULED DATE"]),
+        UNLOAD_TIME_BYD: pickIndex(headerIndex, ["UNLOAD TIME BYD", "UNLOAD TIME", "TEMPO DESCARGA", "HORARIO DE ENTREGA / DELIVERY TIME"]),
+        OPERATION_SCOPE: pickIndex(headerIndex, ["OPERATION SCOPE", "ESCOPO OPERACAO / OPERATION SCOPE", "ESCOPO DA OPERACAO"]),
+        TRANSPORTATION_COMPANY: pickIndex(headerIndex, ["TRANSPORTATION COMPANY", "CARRIER", "TRANSPORTADORA", "TRANSPORTADOR", "TRANSPORTADORA / TRUCK COMPANY"]),
+        CONTAINER: pickIndex(headerIndex, ["CONTAINER", "CNTR", "CONTAINER / CONTAINER"]),
+        BL: pickIndex(headerIndex, ["BL", "B/L", "BL NUMBER", "BL / BILL OF LADING"]),
+        VESSEL: pickIndex(headerIndex, ["VESSEL", "NAVIO", "NAVIO/VIAGEM", "NAVIO / VESSEL"]),
+        BONDED_WAREHOUSE: pickIndex(headerIndex, ["BONDED WAREHOUSE", "ARMAZEM", "RECINTO", "WAREHOUSE", "ARMAZEM / WAREHOUSE"]),
+        MODEL: pickIndex(headerIndex, ["MODEL", "MODELO", "MODELO / MODEL"]),
         RATIONALIZATION: pickIndex(headerIndex, ["RATIONALIZATION", "RATIONALIZACAO", "RACIONALIZACAO"]),
-        LOT: pickIndex(headerIndex, ["LOT", "LOTE"]),
+        LOT: pickIndex(headerIndex, ["LOT", "LOTE", "LOTE / BATCH"]),
         DRIVER_NAME: pickIndex(headerIndex, ["DRIVER NAME", "MOTORISTA"]),
         CPF: pickIndex(headerIndex, ["CPF"]),
         PLATE1: pickIndex(headerIndex, ["LICENSE P (Plate 1)", "PLACA 1", "PLATE 1"]),
@@ -4266,9 +4335,9 @@ fileUpload?.addEventListener("change", (e) => {
         DEPOT_SCA: pickIndex(headerIndex, ["DEPOT SCA"]),
         SALVADOR: pickIndex(headerIndex, ["SALVADOR"]),
         PO_SAP: pickIndex(headerIndex, ["PO SAP", "PO"]),
-        NF: pickIndex(headerIndex, ["NF", "NOTA FISCAL", "NFE"]),
+        NF: pickIndex(headerIndex, ["NF", "NOTA FISCAL", "NFE", "NF'E / INVOICE"]),
         EMISSION_NF: pickIndex(headerIndex, ["EMISSÃO NF", "EMISSAO NF", "DATA NF"]),
-        TYPE_OF_MATERIAL: pickIndex(headerIndex, ["TYPE OF MATERIAL", "MATERIAL", "TIPO DE MATERIAL", "TIPO", "MATERIAL TYPE"]),
+        TYPE_OF_MATERIAL: pickIndex(headerIndex, ["TYPE OF MATERIAL", "TYPE OF MATERIAL2", "MATERIAL", "TIPO DE MATERIAL", "TIPO", "MATERIAL TYPE", "TIPO DE CARGA / CARGO TYPE"]),
         ONLINE_DATE: pickIndex(headerIndex, ["ONLINE DATE", "DATA ONLINE", "ONLINE"]),
         PRIORIDADE: pickIndex(headerIndex, ["PRIORIDADE", "PRIORITY", "URGENTE"]),
         STATUS: pickIndex(headerIndex, ["STATUS", "SITUACAO"]),
@@ -4278,7 +4347,6 @@ fileUpload?.addEventListener("change", (e) => {
         NOTES: pickIndex(headerIndex, ["NOTES", "OBSERVACOES", "OBSERVAÇÕES", "OBS"]),
         PARETO: pickIndex(headerIndex, ["PARETO", "MOTIVO PARETO", "MOTIVO", "REASON"]),
       };
-
       const existingMap = new Map();
       deliveryData.forEach(d => {
         if (d._id) existingMap.set(d._id, d);
@@ -4292,6 +4360,7 @@ fileUpload?.addEventListener("change", (e) => {
         
         obj["DELIVERY AT BYD"] = col.DELIVERY_AT_BYD >= 0 ? safeValue(r[col.DELIVERY_AT_BYD]) : "";
         obj["UNLOAD TIME BYD"] = col.UNLOAD_TIME_BYD >= 0 ? safeValue(r[col.UNLOAD_TIME_BYD]) : "";
+        obj["OPERATION SCOPE"] = col.OPERATION_SCOPE >= 0 ? safeValue(r[col.OPERATION_SCOPE]) : (obj["OPERATION SCOPE"] || "");
         obj["TRANSPORTATION COMPANY"] = col.TRANSPORTATION_COMPANY >= 0 ? safeValue(r[col.TRANSPORTATION_COMPANY]) : "";
         obj["CONTAINER"] = col.CONTAINER >= 0 ? safeValue(r[col.CONTAINER]) : "";
         obj["BL"] = col.BL >= 0 ? safeValue(r[col.BL]) : "";
