@@ -2101,6 +2101,9 @@ function handleRowInteraction(rowEl: HTMLTableRowElement) {
           ${kv("Empty Delivered", rowData["DATA E HORARIO DE ENTREGA CONTAINER VAZIO"])}
           ${kv("Depot", rowData["DEPOT"])}
           ${kv("Ref", rowData["REF"])}
+          ${kv("Delivery Site", rowData["DELIVERY SITE"])}
+          ${kv("Nº Empty CNTR", rowData["N EMPTY CNTR"])}
+          ${kv("Cost Justification", rowData["COST JUSTIFICATION"])}
 
           <div class="md:col-span-2">
             <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">${t("detailsMaterial")}</label>
