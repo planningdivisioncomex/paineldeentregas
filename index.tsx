@@ -1760,7 +1760,32 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
   });
 
   sortedKeys.forEach((dateKey, index) => {
-    const deliveries = groupedByDate[dateKey];
+    const deliveries = [...groupedByDate[dateKey]];
+
+    if (currentSortColumn) {
+      deliveries.sort((a, b) => {
+        const col = currentSortColumn!;
+        if (col === "ONLINE DATE") {
+          const da = toDateMaybe(a[col])?.getTime() ?? Number.MAX_SAFE_INTEGER;
+          const db = toDateMaybe(b[col])?.getTime() ?? Number.MAX_SAFE_INTEGER;
+          return currentSortDirection === "asc" ? da - db : db - da;
+        }
+        const va = String(safeValue(a[col]) || "").trim();
+        const vb = String(safeValue(b[col]) || "").trim();
+        if (!va && !vb) return 0;
+        if (!va) return 1;
+        if (!vb) return -1;
+        const cmp = va.localeCompare(vb, "pt-BR", { numeric: true, sensitivity: "base" });
+        return currentSortDirection === "asc" ? cmp : -cmp;
+      });
+    }
+
+    const sortIcon = (col: string) => {
+      if (currentSortColumn !== col) return `<i class="fas fa-sort ml-1 text-slate-300 dark:text-slate-600"></i>`;
+      return currentSortDirection === "asc"
+        ? `<i class="fas fa-sort-up ml-1 text-blue-600 dark:text-blue-400"></i>`
+        : `<i class="fas fa-sort-down ml-1 text-blue-600 dark:text-blue-400"></i>`;
+    };
 
     let dateObj = new Date(dateKey);
     let hasRealDate = false;
@@ -1899,20 +1924,21 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
 
       <div class="table-responsive">
         <table class="min-w-full text-sm">
-          <thead>
-            <tr class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+<thead>
+            <tr class="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 select-none">
               <th class="px-4 py-2 text-center text-slate-500 text-xs uppercase w-12">${t("tableHeaderRow")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderContainer")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderModel")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderOperation")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderBL")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderCompany")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderVessel")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderWarehouse")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">Online Date</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase">${t("tableHeaderLot")}</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">Pareto</th>
-              <th class="px-4 py-2 text-left text-slate-500 text-xs uppercase w-40">${t("tableHeaderStatus")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="CONTAINER">${t("tableHeaderContainer")}${sortIcon("CONTAINER")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="MODEL">${t("tableHeaderModel")}${sortIcon("MODEL")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="OPERATION SCOPE">${t("tableHeaderOperation")}${sortIcon("OPERATION SCOPE")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="BL">${t("tableHeaderBL")}${sortIcon("BL")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="TRANSPORTATION COMPANY">${t("tableHeaderCompany")}${sortIcon("TRANSPORTATION COMPANY")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="VESSEL">${t("tableHeaderVessel")}${sortIcon("VESSEL")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="BONDED WAREHOUSE">${t("tableHeaderWarehouse")}${sortIcon("BONDED WAREHOUSE")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="DELIVERY SITE">Delivery Site${sortIcon("DELIVERY SITE")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="ONLINE DATE">Online Date${sortIcon("ONLINE DATE")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="LOT">${t("tableHeaderLot")}${sortIcon("LOT")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase w-40 cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="PARETO">Pareto${sortIcon("PARETO")}</th>
+              <th class="sortable-th px-4 py-2 text-left text-slate-500 text-xs uppercase w-40 cursor-pointer hover:text-blue-600 transition-colors" data-sort-col="STATUS">${t("tableHeaderStatus")}${sortIcon("STATUS")}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
