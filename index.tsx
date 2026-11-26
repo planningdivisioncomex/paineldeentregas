@@ -1997,6 +1997,8 @@ function renderDeliveryDashboard(data: DeliveryRow[], activeTabId: string | null
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["TRANSPORTATION COMPANY"] || "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["VESSEL"] || "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300">${row["BONDED WAREHOUSE"] || "-"}</td>
+                  <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["DELIVERY SITE"] || "-"}</td>
+                  <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["ONLINE DATE"] ? formatDate(row["ONLINE DATE"]) : "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["ONLINE DATE"] ? formatDate(row["ONLINE DATE"]) : "-"}</td>
                   <td class="px-4 py-3 text-xs text-slate-600 dark:text-slate-300 font-medium">${row["LOT"] || "-"}</td>
                   <td class="px-4 py-3 text-xs" onclick="event.stopPropagation()">
@@ -2159,7 +2161,21 @@ function handleRowInteraction(rowEl: HTMLTableRowElement) {
 
 deliveryContent?.addEventListener("click", async (e) => {
   const target = e.target as HTMLElement;
-  
+  // Ordenação em 1 clique nas colunas da tabela
+  const sortTh = target.closest<HTMLElement>(".sortable-th");
+  if (sortTh) {
+    const col = sortTh.dataset.sortCol || "";
+    if (col) {
+      if (currentSortColumn === col) {
+        currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
+      } else {
+        currentSortColumn = col;
+        currentSortDirection = "asc";
+      }
+      applyFiltersAndRender();
+    }
+    return;
+  }
   // Tratativa do clique na bandeira de Prioridade
   const priorityBtn = target.closest<HTMLButtonElement>(".priority-toggle-btn");
   if (priorityBtn) {
